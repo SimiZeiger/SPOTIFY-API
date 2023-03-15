@@ -1,12 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { container, Form } from 'react-bootstrap'
+import { Container, Form } from 'react-bootstrap'
+import SpotifyWebApi from 'spotify-web-api-node';
+
+const spotifyApi = new SpotifyWebApi({
+    clientId: '21efd09454c5498a81e7e7b20bebb1b0' 
+})
 
 export default function Dashboard({code }) {
     const accessToken = useAuth(code)
-    const [search,setSearch] = useState('')
+    const [search, setSearch] = useState('')
+    const [searchResults, setSearchResults] = useState([])
+
+    useEffect(() => {
+        if (!accessToken) return
+        spotifyApi.setAccessToken(accessToken)
+    }, [accessToken])
+
+    useEffect(() => {
+        if (!search) return setSearchResults([])
+        if (!accessToken) return 
+
+        spotifyApi.searchTracks(search).then(res => {
+            setSearchResults(res.body.tracks.items.map(track => {
+                const smallestAlbumImage = track.album.images.reduce((smallest, image) => {
+                    if (image.height < smallest.height) return image
+                    return smallest
+                }, track.album.images[0]) 
+
+               return {
+                artist: track.artists[0].name,
+                title: track.name,
+                uri: track.uri,
+                albumUrl: smallestAlbumImage.url
+               } 
+            }))
+        })
+    }, [search, accessToken])
+
+
     return( 
-    <container className='d-flex flex-column py-2' style={
+    <Container className='d-flex flex-column py-2' style={
       {height: '100vh'}}>
         <Form.Control 
         type='search' 
@@ -17,6 +51,7 @@ export default function Dashboard({code }) {
         <div className='flex-grow-1 my-2' style={{ overflowY: 'auto'}}>
             Songs
         </div>
-      </container>
+        <div>Bottom</div>
+      </Container>
  )
 }
