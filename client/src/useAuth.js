@@ -10,7 +10,8 @@ export default function useAuth(code) {
 
 
 useEffect(() => {
-    axios.post('http://localhost:3001/login', {
+    axios
+    .post('http://localhost:3001/login', {
         code,
     }).then(res => {
         setAccessToken(res.data.accessToken)
